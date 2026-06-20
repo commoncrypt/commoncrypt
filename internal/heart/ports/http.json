@@ -1,0 +1,61 @@
+{
+  "openapi": "3.0.0",
+  "info": { "version": "1.0.0", "title": "Commoncrypt Heart" },
+  "paths": {
+    "/account/register": {
+      "summary": "Registers a new account",
+      "description": "Accepts an email and a hashed password. Sends an email verification code. In future, may accept a passkey instead of a password",
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "password": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account registration has been initiatied and an email verification code has been sent."
+          }
+        }
+      }
+    },
+    "/account/complete-registration": {
+      "summary": "Completes account registration",
+      "description": "Accepts an email verification code and completes account registration.",
+      "post": {
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Account registration has been completed."
+          }
+        }
+      }
+    },
+    "/account/authenticate": {},
+    "/account/complete-authentication": {},
+    "/app/register": {},
+    "/app/authenticate": {}
+  },
+  "components": {
+    "schemas": {}
+  }
+}
