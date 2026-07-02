@@ -7,50 +7,38 @@ import (
 	"github.com/commoncrypt/commoncrypt/internal/heart/domain/account"
 )
 
-type RegisterAccount struct {
-	Email    string
-	Password string
+type SendVerificationCode struct {
+	Email string
 }
 
-type RegisterAccountHandler struct {
-	repo                    account.Repository
+type SendVerificationCodeHandler struct {
 	emailService            EmailService
 	verificationCodeService VerificationCodeService
 }
 
-func NewRegisterAccountHandler(
-	repo account.Repository,
+func NewSendVerificationCodeHandler(
 	emailService EmailService,
 	verificationCodeService VerificationCodeService,
-) RegisterAccountHandler {
-	return RegisterAccountHandler{
-		repo,
+) SendVerificationCodeHandler {
+	return SendVerificationCodeHandler{
 		emailService,
 		verificationCodeService,
 	}
 }
 
-func (h RegisterAccountHandler) Handle(ctx context.Context, cmd RegisterAccount) error {
+func (h SendVerificationCodeHandler) Handle(ctx context.Context, cmd SendVerificationCode) error {
 	if !account.IsValidEmail(cmd.Email) {
 		return errors.InvalidValue.WithContext("invalid email")
 	}
 
-	exists, err := h.repo.AccountExists(ctx, cmd.Email)
-	if err != nil {
-		return err
-	}
-	if exists {
-		return errors.AlreadyExists
-	}
-
 	code, err := h.verificationCodeService.Make(ctx, cmd.Email)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	err = h.emailService.SendVerificationEmail(ctx, cmd.Email, code)
 	if err != nil {
-		return nil
+		return err
 	}
 
 	return nil

@@ -10,7 +10,7 @@ type Application struct {
 }
 
 type Commands struct {
-	RegisterAccount command.RegisterAccountHandler
+	SendVerificationCode command.SendVerificationCodeHandler
 }
 
 type Queries struct {

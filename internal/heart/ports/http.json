@@ -2,9 +2,9 @@
   "openapi": "3.0.0",
   "info": { "version": "1.0.0", "title": "Commoncrypt Heart" },
   "paths": {
-    "/account/register": {
-      "summary": "Registers a new account",
-      "description": "Accepts an email and a hashed password. Sends an email verification code. In future, may accept a passkey instead of a password",
+    "/email/request-code": {
+      "summary": "",
+      "description": "Requests an email verification code, which is required by registration endpoints.",
       "post": {
         "requestBody": {
           "content": {
@@ -12,8 +12,7 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" },
-                  "password": { "type": "string" }
+                  "email": { "type": "string" }
                 }
               }
             }
@@ -21,13 +20,13 @@
         },
         "responses": {
           "200": {
-            "description": "Account registration has been initiatied and an email verification code has been sent."
+            "description": "An email verification code has been sent."
           }
         }
       }
     },
-    "/account/complete-registration": {
-      "summary": "Completes account registration",
+    "/account/register": {
+      "summary": "Registers an account",
       "description": "Accepts an email verification code and completes account registration.",
       "post": {
         "requestBody": {

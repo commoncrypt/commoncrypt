@@ -20,17 +20,16 @@ type PostAccountCompleteRegistrationJSONBody struct {
 	Email *string `json:"email,omitempty"`
 }
 
-// PostAccountRegisterJSONBody defines parameters for PostAccountRegister.
-type PostAccountRegisterJSONBody struct {
-	Email    *string `json:"email,omitempty"`
-	Password *string `json:"password,omitempty"`
+// PostSendVerificationCodeJSONBody defines parameters for PostSendVerificationCode.
+type PostSendVerificationCodeJSONBody struct {
+	Email *string `json:"email,omitempty"`
 }
 
 // PostAccountCompleteRegistrationJSONRequestBody defines body for PostAccountCompleteRegistration for application/json ContentType.
 type PostAccountCompleteRegistrationJSONRequestBody PostAccountCompleteRegistrationJSONBody
 
-// PostAccountRegisterJSONRequestBody defines body for PostAccountRegister for application/json ContentType.
-type PostAccountRegisterJSONRequestBody PostAccountRegisterJSONBody
+// PostSendVerificationCodeJSONRequestBody defines body for PostSendVerificationCode for application/json ContentType.
+type PostSendVerificationCodeJSONRequestBody PostSendVerificationCodeJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -38,8 +37,8 @@ type ServerInterface interface {
 	// (POST /account/complete-registration)
 	PostAccountCompleteRegistration(w http.ResponseWriter, r *http.Request)
 
-	// (POST /account/register)
-	PostAccountRegister(w http.ResponseWriter, r *http.Request)
+	// (POST /send-verification-code)
+	PostSendVerificationCode(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -65,11 +64,11 @@ func (siw *ServerInterfaceWrapper) PostAccountCompleteRegistration(w http.Respon
 	handler.ServeHTTP(w, r)
 }
 
-// PostAccountRegister operation middleware
-func (siw *ServerInterfaceWrapper) PostAccountRegister(w http.ResponseWriter, r *http.Request) {
+// PostSendVerificationCode operation middleware
+func (siw *ServerInterfaceWrapper) PostSendVerificationCode(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostAccountRegister(w, r)
+		siw.Handler.PostSendVerificationCode(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -200,7 +199,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	}
 
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/account/complete-registration", wrapper.PostAccountCompleteRegistration)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/account/register", wrapper.PostAccountRegister)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/send-verification-code", wrapper.PostSendVerificationCode)
 
 	return m
 }
@@ -221,18 +220,18 @@ func (response PostAccountCompleteRegistration200Response) VisitPostAccountCompl
 	return nil
 }
 
-type PostAccountRegisterRequestObject struct {
-	Body *PostAccountRegisterJSONRequestBody
+type PostSendVerificationCodeRequestObject struct {
+	Body *PostSendVerificationCodeJSONRequestBody
 }
 
-type PostAccountRegisterResponseObject interface {
-	VisitPostAccountRegisterResponse(w http.ResponseWriter) error
+type PostSendVerificationCodeResponseObject interface {
+	VisitPostSendVerificationCodeResponse(w http.ResponseWriter) error
 }
 
-type PostAccountRegister200Response struct {
+type PostSendVerificationCode200Response struct {
 }
 
-func (response PostAccountRegister200Response) VisitPostAccountRegisterResponse(w http.ResponseWriter) error {
+func (response PostSendVerificationCode200Response) VisitPostSendVerificationCodeResponse(w http.ResponseWriter) error {
 	w.WriteHeader(200)
 	return nil
 }
@@ -243,8 +242,8 @@ type StrictServerInterface interface {
 	// (POST /account/complete-registration)
 	PostAccountCompleteRegistration(ctx context.Context, request PostAccountCompleteRegistrationRequestObject) (PostAccountCompleteRegistrationResponseObject, error)
 
-	// (POST /account/register)
-	PostAccountRegister(ctx context.Context, request PostAccountRegisterRequestObject) (PostAccountRegisterResponseObject, error)
+	// (POST /send-verification-code)
+	PostSendVerificationCode(ctx context.Context, request PostSendVerificationCodeRequestObject) (PostSendVerificationCodeResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -310,11 +309,11 @@ func (sh *strictHandler) PostAccountCompleteRegistration(w http.ResponseWriter, 
 	}
 }
 
-// PostAccountRegister operation middleware
-func (sh *strictHandler) PostAccountRegister(w http.ResponseWriter, r *http.Request) {
-	var request PostAccountRegisterRequestObject
+// PostSendVerificationCode operation middleware
+func (sh *strictHandler) PostSendVerificationCode(w http.ResponseWriter, r *http.Request) {
+	var request PostSendVerificationCodeRequestObject
 
-	var body PostAccountRegisterJSONRequestBody
+	var body PostSendVerificationCodeJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		if !errors.Is(err, io.EOF) {
 			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
@@ -325,18 +324,18 @@ func (sh *strictHandler) PostAccountRegister(w http.ResponseWriter, r *http.Requ
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAccountRegister(ctx, request.(PostAccountRegisterRequestObject))
+		return sh.ssi.PostSendVerificationCode(ctx, request.(PostSendVerificationCodeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAccountRegister")
+		handler = middleware(handler, "PostSendVerificationCode")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostAccountRegisterResponseObject); ok {
-		if err := validResponse.VisitPostAccountRegisterResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostSendVerificationCodeResponseObject); ok {
+		if err := validResponse.VisitPostSendVerificationCodeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

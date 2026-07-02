@@ -21,16 +21,15 @@ func NewHttpServer(app app.Application) HttpServer {
 
 var _ StrictServerInterface = HttpServer{}
 
-func (h HttpServer) PostAccountRegister(
+func (h HttpServer) PostSendVerificationCode(
 	ctx context.Context,
-	request PostAccountRegisterRequestObject,
-) (PostAccountRegisterResponseObject, error) {
-	h.app.Commands.RegisterAccount.Handle(ctx, command.RegisterAccount{
-		Email:    *request.Body.Email,
-		Password: *request.Body.Password,
+	request PostSendVerificationCodeRequestObject,
+) (PostSendVerificationCodeResponseObject, error) {
+	h.app.Commands.SendVerificationCode.Handle(ctx, command.SendVerificationCode{
+		Email: *request.Body.Email,
 	})
 
-	return PostAccountRegister200Response{}, nil
+	return PostSendVerificationCode200Response{}, nil
 }
 
 func (h HttpServer) PostAccountCompleteRegistration(
