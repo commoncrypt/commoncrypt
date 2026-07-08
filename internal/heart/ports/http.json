@@ -3,9 +3,8 @@
   "info": { "version": "1.0.0", "title": "Commoncrypt Heart" },
   "paths": {
     "/email/request-code": {
-      "summary": "",
-      "description": "Requests an email verification code, which is required by registration endpoints.",
       "post": {
+        "summary": "Requests an email code",
         "requestBody": {
           "content": {
             "application/json": {
@@ -20,7 +19,43 @@
         },
         "responses": {
           "200": {
-            "description": "An email verification code has been sent."
+            "description": "An email verification code has been sent"
+          }
+        }
+      }
+    },
+    "/email/confirm-code": {
+      "post": {
+        "summary": "Confirms an email code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The email code has been validated as correct",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": { "type": "string" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The email code is incorrect"
           }
         }
       }
