@@ -34,7 +34,7 @@
                 "type": "object",
                 "properties": {
                   "email": { "type": "string" },
-                  "code": { "type": "string" }
+                  "email_code": { "type": "string" }
                 }
               }
             }
@@ -48,7 +48,8 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "token": { "type": "string" }
+                    "session_token": { "type": "string" },
+                    "session_token_expiry": { "type": "integer" }
                   }
                 }
               }
@@ -62,7 +63,6 @@
     },
     "/account/register": {
       "summary": "Registers an account",
-      "description": "Accepts an email verification code and completes account registration.",
       "post": {
         "requestBody": {
           "content": {
@@ -71,7 +71,7 @@
                 "type": "object",
                 "properties": {
                   "email": { "type": "string" },
-                  "code": { "type": "string" }
+                  "session_token": { "type": "string" }
                 }
               }
             }
@@ -79,12 +79,25 @@
         },
         "responses": {
           "200": {
-            "description": "Account registration has been completed."
+            "description": "The account was successfully registered",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "bearer_token": { "type": "string" },
+                    "bearer_token_expiry": { "type": "integer" }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
-    "/account/authenticate": {},
+    "/account/authenticate": {
+      "summary":
+    },
     "/account/complete-authentication": {},
     "/app/register": {},
     "/app/authenticate": {}
