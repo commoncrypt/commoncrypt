@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/commoncrypt/commoncrypt/internal/heart/app"
-	"github.com/commoncrypt/commoncrypt/internal/heart/app/command"
 )
 
 //go:generate go tool oapi-codegen -config oapi_codegen.json http.json
@@ -21,20 +20,23 @@ func NewHttpServer(app app.Application) HttpServer {
 
 var _ StrictServerInterface = HttpServer{}
 
-func (h HttpServer) PostSendVerificationCode(
+func (h HttpServer) PostPushAuthenticate(
 	ctx context.Context,
-	request PostSendVerificationCodeRequestObject,
-) (PostSendVerificationCodeResponseObject, error) {
-	h.app.Commands.SendVerificationCode.Handle(ctx, command.SendVerificationCode{
-		Email: *request.Body.Email,
-	})
-
-	return PostSendVerificationCode200Response{}, nil
+	request PostPushAuthenticateRequestObject,
+) (PostPushAuthenticateResponseObject, error) {
+	// TODO: implement
+	// Query: check the challenge
+	// Command: mint authentication tokens
+	// Query: grab authentication tokens
+	return PostPushAuthenticate200JSONResponse{}, nil
 }
 
-func (h HttpServer) PostAccountCompleteRegistration(
+func (h HttpServer) PostPushChallenge(
 	ctx context.Context,
-	request PostAccountCompleteRegistrationRequestObject,
-) (PostAccountCompleteRegistrationResponseObject, error) {
-	return PostAccountCompleteRegistration200Response{}, nil
+	request PostPushChallengeRequestObject,
+) (PostPushChallengeResponseObject, error) {
+	// TODO: implement
+	// Command: create the challenge
+	// Query: the challenge info
+	return PostPushChallenge200JSONResponse{}, nil
 }

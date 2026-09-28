@@ -6,6 +6,7 @@
 package ports
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -14,31 +15,31 @@ import (
 	"net/http"
 )
 
-// PostAccountCompleteRegistrationJSONBody defines parameters for PostAccountCompleteRegistration.
-type PostAccountCompleteRegistrationJSONBody struct {
-	Code  *string `json:"code,omitempty"`
-	Email *string `json:"email,omitempty"`
+// PostPushAuthenticateJSONBody defines parameters for PostPushAuthenticate.
+type PostPushAuthenticateJSONBody struct {
+	ChallengeToken *string `json:"challenge_token,omitempty"`
+	Username       *string `json:"username,omitempty"`
 }
 
-// PostSendVerificationCodeJSONBody defines parameters for PostSendVerificationCode.
-type PostSendVerificationCodeJSONBody struct {
-	Email *string `json:"email,omitempty"`
+// PostPushChallengeJSONBody defines parameters for PostPushChallenge.
+type PostPushChallengeJSONBody struct {
+	Username *string `json:"username,omitempty"`
 }
 
-// PostAccountCompleteRegistrationJSONRequestBody defines body for PostAccountCompleteRegistration for application/json ContentType.
-type PostAccountCompleteRegistrationJSONRequestBody PostAccountCompleteRegistrationJSONBody
+// PostPushAuthenticateJSONRequestBody defines body for PostPushAuthenticate for application/json ContentType.
+type PostPushAuthenticateJSONRequestBody PostPushAuthenticateJSONBody
 
-// PostSendVerificationCodeJSONRequestBody defines body for PostSendVerificationCode for application/json ContentType.
-type PostSendVerificationCodeJSONRequestBody PostSendVerificationCodeJSONBody
+// PostPushChallengeJSONRequestBody defines body for PostPushChallenge for application/json ContentType.
+type PostPushChallengeJSONRequestBody PostPushChallengeJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-
-	// (POST /account/complete-registration)
-	PostAccountCompleteRegistration(w http.ResponseWriter, r *http.Request)
-
-	// (POST /send-verification-code)
-	PostSendVerificationCode(w http.ResponseWriter, r *http.Request)
+	// Polls for the successful completion of a challenge
+	// (POST /push/authenticate)
+	PostPushAuthenticate(w http.ResponseWriter, r *http.Request)
+	// Generates a challenge for push-based authentication
+	// (POST /push/challenge)
+	PostPushChallenge(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -50,11 +51,11 @@ type ServerInterfaceWrapper struct {
 
 type MiddlewareFunc func(http.Handler) http.Handler
 
-// PostAccountCompleteRegistration operation middleware
-func (siw *ServerInterfaceWrapper) PostAccountCompleteRegistration(w http.ResponseWriter, r *http.Request) {
+// PostPushAuthenticate operation middleware
+func (siw *ServerInterfaceWrapper) PostPushAuthenticate(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostAccountCompleteRegistration(w, r)
+		siw.Handler.PostPushAuthenticate(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -64,11 +65,11 @@ func (siw *ServerInterfaceWrapper) PostAccountCompleteRegistration(w http.Respon
 	handler.ServeHTTP(w, r)
 }
 
-// PostSendVerificationCode operation middleware
-func (siw *ServerInterfaceWrapper) PostSendVerificationCode(w http.ResponseWriter, r *http.Request) {
+// PostPushChallenge operation middleware
+func (siw *ServerInterfaceWrapper) PostPushChallenge(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.PostSendVerificationCode(w, r)
+		siw.Handler.PostPushChallenge(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -198,52 +199,106 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/account/complete-registration", wrapper.PostAccountCompleteRegistration)
-	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/send-verification-code", wrapper.PostSendVerificationCode)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/push/authenticate", wrapper.PostPushAuthenticate)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/push/challenge", wrapper.PostPushChallenge)
 
 	return m
 }
 
-type PostAccountCompleteRegistrationRequestObject struct {
-	Body *PostAccountCompleteRegistrationJSONRequestBody
+type PostPushAuthenticateRequestObject struct {
+	Body *PostPushAuthenticateJSONRequestBody
 }
 
-type PostAccountCompleteRegistrationResponseObject interface {
-	VisitPostAccountCompleteRegistrationResponse(w http.ResponseWriter) error
+type PostPushAuthenticateResponseObject interface {
+	VisitPostPushAuthenticateResponse(w http.ResponseWriter) error
 }
 
-type PostAccountCompleteRegistration200Response struct {
+type PostPushAuthenticate200JSONResponse struct {
+	AccessExpiry  *int        `json:"access_expiry,omitempty"`
+	AccessToken   *string     `json:"access_token,omitempty"`
+	RefreshExpiry *int        `json:"refresh_expiry,omitempty"`
+	RefreshToken  *string     `json:"refresh_token,omitempty"`
+	Status        interface{} `json:"status,omitempty"`
 }
 
-func (response PostAccountCompleteRegistration200Response) VisitPostAccountCompleteRegistrationResponse(w http.ResponseWriter) error {
+func (response PostPushAuthenticate200JSONResponse) VisitPostPushAuthenticateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	return nil
+	_, err := buf.WriteTo(w)
+	return err
 }
 
-type PostSendVerificationCodeRequestObject struct {
-	Body *PostSendVerificationCodeJSONRequestBody
+type PostPushAuthenticate401JSONResponse struct {
+	Status interface{} `json:"status,omitempty"`
 }
 
-type PostSendVerificationCodeResponseObject interface {
-	VisitPostSendVerificationCodeResponse(w http.ResponseWriter) error
+func (response PostPushAuthenticate401JSONResponse) VisitPostPushAuthenticateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+	_, err := buf.WriteTo(w)
+	return err
 }
 
-type PostSendVerificationCode200Response struct {
+type PostPushAuthenticate404JSONResponse struct {
+	Status interface{} `json:"status,omitempty"`
 }
 
-func (response PostSendVerificationCode200Response) VisitPostSendVerificationCodeResponse(w http.ResponseWriter) error {
+func (response PostPushAuthenticate404JSONResponse) VisitPostPushAuthenticateResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PostPushChallengeRequestObject struct {
+	Body *PostPushChallengeJSONRequestBody
+}
+
+type PostPushChallengeResponseObject interface {
+	VisitPostPushChallengeResponse(w http.ResponseWriter) error
+}
+
+type PostPushChallenge200JSONResponse struct {
+	ChallengeExpiry *int    `json:"challenge_expiry,omitempty"`
+	ChallengeSeed   *string `json:"challenge_seed,omitempty"`
+	ChallengeToken  *string `json:"challenge_token,omitempty"`
+}
+
+func (response PostPushChallenge200JSONResponse) VisitPostPushChallengeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(200)
-	return nil
+	_, err := buf.WriteTo(w)
+	return err
 }
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
-
-	// (POST /account/complete-registration)
-	PostAccountCompleteRegistration(ctx context.Context, request PostAccountCompleteRegistrationRequestObject) (PostAccountCompleteRegistrationResponseObject, error)
-
-	// (POST /send-verification-code)
-	PostSendVerificationCode(ctx context.Context, request PostSendVerificationCodeRequestObject) (PostSendVerificationCodeResponseObject, error)
+	// Polls for the successful completion of a challenge
+	// (POST /push/authenticate)
+	PostPushAuthenticate(ctx context.Context, request PostPushAuthenticateRequestObject) (PostPushAuthenticateResponseObject, error)
+	// Generates a challenge for push-based authentication
+	// (POST /push/challenge)
+	PostPushChallenge(ctx context.Context, request PostPushChallengeRequestObject) (PostPushChallengeResponseObject, error)
 }
 
 type StrictHandlerFunc func(ctx context.Context, w http.ResponseWriter, r *http.Request, request any) (any, error)
@@ -275,11 +330,11 @@ type strictHandler struct {
 	options     StrictHTTPServerOptions
 }
 
-// PostAccountCompleteRegistration operation middleware
-func (sh *strictHandler) PostAccountCompleteRegistration(w http.ResponseWriter, r *http.Request) {
-	var request PostAccountCompleteRegistrationRequestObject
+// PostPushAuthenticate operation middleware
+func (sh *strictHandler) PostPushAuthenticate(w http.ResponseWriter, r *http.Request) {
+	var request PostPushAuthenticateRequestObject
 
-	var body PostAccountCompleteRegistrationJSONRequestBody
+	var body PostPushAuthenticateJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		if !errors.Is(err, io.EOF) {
 			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
@@ -290,18 +345,18 @@ func (sh *strictHandler) PostAccountCompleteRegistration(w http.ResponseWriter, 
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostAccountCompleteRegistration(ctx, request.(PostAccountCompleteRegistrationRequestObject))
+		return sh.ssi.PostPushAuthenticate(ctx, request.(PostPushAuthenticateRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostAccountCompleteRegistration")
+		handler = middleware(handler, "PostPushAuthenticate")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostAccountCompleteRegistrationResponseObject); ok {
-		if err := validResponse.VisitPostAccountCompleteRegistrationResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostPushAuthenticateResponseObject); ok {
+		if err := validResponse.VisitPostPushAuthenticateResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -309,11 +364,11 @@ func (sh *strictHandler) PostAccountCompleteRegistration(w http.ResponseWriter, 
 	}
 }
 
-// PostSendVerificationCode operation middleware
-func (sh *strictHandler) PostSendVerificationCode(w http.ResponseWriter, r *http.Request) {
-	var request PostSendVerificationCodeRequestObject
+// PostPushChallenge operation middleware
+func (sh *strictHandler) PostPushChallenge(w http.ResponseWriter, r *http.Request) {
+	var request PostPushChallengeRequestObject
 
-	var body PostSendVerificationCodeJSONRequestBody
+	var body PostPushChallengeJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		if !errors.Is(err, io.EOF) {
 			sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
@@ -324,18 +379,18 @@ func (sh *strictHandler) PostSendVerificationCode(w http.ResponseWriter, r *http
 	}
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.PostSendVerificationCode(ctx, request.(PostSendVerificationCodeRequestObject))
+		return sh.ssi.PostPushChallenge(ctx, request.(PostPushChallengeRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "PostSendVerificationCode")
+		handler = middleware(handler, "PostPushChallenge")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(PostSendVerificationCodeResponseObject); ok {
-		if err := validResponse.VisitPostSendVerificationCodeResponse(w); err != nil {
+	} else if validResponse, ok := response.(PostPushChallengeResponseObject); ok {
+		if err := validResponse.VisitPostPushChallengeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -4,6 +4,8 @@ import (
 	"context"
 
 	"github.com/commoncrypt/commoncrypt/internal/common/errors"
+	"github.com/commoncrypt/commoncrypt/internal/common/patterns"
+	"github.com/commoncrypt/commoncrypt/internal/heart/app/service"
 	"github.com/commoncrypt/commoncrypt/internal/heart/domain/account"
 )
 
@@ -12,19 +14,21 @@ type SendVerificationCode struct {
 }
 
 type SendVerificationCodeHandler struct {
-	emailService            EmailService
-	verificationCodeService VerificationCodeService
+	emailService            service.EmailService
+	verificationCodeService service.VerificationCodeService
 }
 
 func NewSendVerificationCodeHandler(
-	emailService EmailService,
-	verificationCodeService VerificationCodeService,
+	emailService service.EmailService,
+	verificationCodeService service.VerificationCodeService,
 ) SendVerificationCodeHandler {
 	return SendVerificationCodeHandler{
 		emailService,
 		verificationCodeService,
 	}
 }
+
+var _ patterns.CommandHandler[SendVerificationCode] = SendVerificationCodeHandler{}
 
 func (h SendVerificationCodeHandler) Handle(ctx context.Context, cmd SendVerificationCode) error {
 	if !account.IsValidEmail(cmd.Email) {

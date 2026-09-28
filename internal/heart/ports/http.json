@@ -1,17 +1,17 @@
 {
   "openapi": "3.0.0",
-  "info": { "version": "1.0.0", "title": "Commoncrypt Heart" },
+  "info": { "version": "1.0.0", "title": "Commoncrypt Auth Service" },
   "paths": {
-    "/email/request-code": {
+    "/push/challenge": {
       "post": {
-        "summary": "Requests an email code",
+        "summary": "Generates a challenge for push-based authentication",
         "requestBody": {
           "content": {
             "application/json": {
               "schema": {
                 "type": "object",
                 "properties": {
-                  "email": { "type": "string" }
+                  "username": { "type": "string" }
                 }
               }
             }
@@ -19,74 +19,78 @@
         },
         "responses": {
           "200": {
-            "description": "An email verification code has been sent"
-          }
-        }
-      }
-    },
-    "/email/confirm-code": {
-      "post": {
-        "summary": "Confirms an email code",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": { "type": "string" },
-                  "email_code": { "type": "string" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The email code has been validated as correct",
+            "description": "A challenge has been generated",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "session_token": { "type": "string" },
-                    "session_token_expiry": { "type": "integer" }
+                    "challenge_expiry": { "type": "integer" },
+                    "challenge_token": { "type": "string" },
+                    "challenge_seed": { "type": "string" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/push/authenticate": {
+      "post": {
+        "summary": "Polls for the successful completion of a challenge",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": { "type": "string" },
+                  "challenge_token": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The challenge has been completed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "const": "completed" },
+                    "access_expiry": { "type": "integer" },
+                    "access_token": { "type": "string" },
+                    "refresh_expiry": { "type": "integer" },
+                    "refresh_token": { "type": "string" }
                   }
                 }
               }
             }
           },
-          "403": {
-            "description": "The email code is incorrect"
-          }
-        }
-      }
-    },
-    "/account/register": {
-      "summary": "Registers an account",
-      "post": {
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "email": { "type": "string" },
-                  "session_token": { "type": "string" }
-                }
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "The account was successfully registered",
+          "401": {
+            "description": "The challenge is still pending but has neither expired nor been rejected",
             "content": {
               "application/json": {
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "bearer_token": { "type": "string" },
-                    "bearer_token_expiry": { "type": "integer" }
+                    "status": { "const": "pending" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "The challenge could not be located, perhaps due to expiry",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "const": "notfound" }
                   }
                 }
               }
@@ -94,13 +98,7 @@
           }
         }
       }
-    },
-    "/account/authenticate": {
-      "summary":
-    },
-    "/account/complete-authentication": {},
-    "/app/register": {},
-    "/app/authenticate": {}
+    }
   },
   "components": {
     "schemas": {}

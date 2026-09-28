@@ -1,0 +1,61 @@
+{
+"/email/confirm-code": {
+      "post": {
+        "summary": "Confirms an email code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" },
+                  "email_code": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The email code has been validated as correct",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "session_token": { "type": "string" },
+                    "session_token_expiry": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "The email code is incorrect"
+          }
+        }
+      }
+    },
+    "/email/request-code": {
+      "post": {
+        "summary": "Requests an email code",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "email": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "An email verification code has been sent"
+          }
+        }
+      }
+    }
+}
