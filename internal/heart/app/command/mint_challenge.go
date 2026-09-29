@@ -17,15 +17,15 @@ type MintChallengeResult struct {
 	ChallengeExpiry time.Time
 }
 
-type MintChallengeHandler struct{}
+type MintChallengeProducer struct{}
 
-func NewMintChallengeHandler() MintChallengeHandler {
-	return MintChallengeHandler{}
+func NewMintChallengeProducer() MintChallengeProducer {
+	return MintChallengeProducer{}
 }
 
-var _ patterns.CommandProducer[MintChallenge, MintChallengeResult] = MintChallengeHandler{}
+var _ patterns.CommandProducer[MintChallenge, MintChallengeResult] = MintChallengeProducer{}
 
-func (h MintChallengeHandler) Produce(ctx context.Context, cmd MintChallenge) (MintChallengeResult, error) {
+func (h MintChallengeProducer) Produce(ctx context.Context, cmd MintChallenge) (MintChallengeResult, error) {
 	// TODO: implement
 	return MintChallengeResult{}, nil
 }

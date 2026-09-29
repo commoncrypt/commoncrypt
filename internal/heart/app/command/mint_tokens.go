@@ -18,15 +18,15 @@ type MintTokensResult struct {
 	RefreshExpiry time.Time
 }
 
-type MintTokensHandler struct{}
+type MintTokensProducer struct{}
 
-func NewMintTokensHandler() MintTokensHandler {
-	return MintTokensHandler{}
+func NewMintTokensProducer() MintTokensProducer {
+	return MintTokensProducer{}
 }
 
-var _ patterns.CommandProducer[MintTokens, MintTokensResult] = MintTokensHandler{}
+var _ patterns.CommandProducer[MintTokens, MintTokensResult] = MintTokensProducer{}
 
-func (h MintTokensHandler) Produce(ctx context.Context, cmd MintTokens) (MintTokensResult, error) {
+func (h MintTokensProducer) Produce(ctx context.Context, cmd MintTokens) (MintTokensResult, error) {
 	// TODO: implement
 	return MintTokensResult{}, nil
 }

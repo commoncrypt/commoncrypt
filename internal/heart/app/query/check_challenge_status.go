@@ -4,34 +4,30 @@ import (
 	"context"
 
 	"github.com/commoncrypt/commoncrypt/internal/common/patterns"
-)
-
-type ChallengeStatus int
-
-const (
-	ChallengeStatusPending ChallengeStatus = iota
-	ChallengeStatusCompleted
-	ChallengeStatusNotFound
+	"github.com/commoncrypt/commoncrypt/internal/heart/domain/pushchallenge"
 )
 
 type CheckChallengeStatus struct {
-	Username       string
 	ChallengeToken string
 }
 
 type CheckChallengeStatusResult struct {
-	Status ChallengeStatus
+	Status pushchallenge.PushChallengeStatus
 }
 
-type CheckChallengeStatusHandler struct{}
-
-func NewCheckChallengeStatusHandler() CheckChallengeStatusHandler {
-	return CheckChallengeStatusHandler{}
+type CheckChallengeStatusProducer struct {
+	repository pushchallenge.Repository
 }
 
-var _ patterns.QueryProducer[CheckChallengeStatus, CheckChallengeStatusResult] = CheckChallengeStatusHandler{}
+func NewCheckChallengeStatusProducer(repository pushchallenge.Repository) CheckChallengeStatusProducer {
+	return CheckChallengeStatusProducer{
+		repository: repository,
+	}
+}
 
-func (h CheckChallengeStatusHandler) Produce(ctx context.Context, q CheckChallengeStatus) (CheckChallengeStatusResult, error) {
-	// TODO: implement
-	return CheckChallengeStatusResult{}, nil
+var _ patterns.QueryProducer[CheckChallengeStatus, CheckChallengeStatusResult] = CheckChallengeStatusProducer{}
+
+func (h CheckChallengeStatusProducer) Produce(ctx context.Context, q CheckChallengeStatus) (CheckChallengeStatusResult, error) {
+	status, err := h.repository.Check(ctx, q.ChallengeToken)
+	return CheckChallengeStatusResult{Status: status}, err
 }
